@@ -7,6 +7,8 @@
 # Script early warning indicators / 10000 simulations
 # --------------------------------------------------------------------------
 
+rm(list=ls())
+
 # 1. Packages
 # --------------------------------------------------------------------------
 library("lattice")
@@ -23,7 +25,14 @@ simulRes <- read.table(
   "input_data/resultCombinedStressMiseFormeSoleneTOT10000.csv", 
   sep = ";", dec = ".", header = TRUE
 )
+
 simulRes$survival <- as.logical(simulRes$survival)
+
+simulRes$TotalWeight <- NA
+simulRes$TotalWeight <-((simulRes$TotalIHbees+simulRes$TotalForagers)*0.1 + simulRes$TotalDrones*0.2+simulRes$TotalLarvae*0.0853+simulRes$TotalDroneLarvae*0.1137333)/1000 +simulRes$HoneyEnergyStore #calcul pour obtenir le poids de la colonie
+simulRes$TotalWeight[simulRes$TotalWeight<0] = 0 #ne pas prendre les poids n??gatifs
+
+simulRes$HoneyEnergyStore[simulRes$HoneyEnergyStore<0]=0 #ne pas prendre les poids n??gatifs
 
 
 # 3. Data analysis
@@ -36,7 +45,6 @@ simulRes$survival <- as.logical(simulRes$survival)
 
 
 #############################plusieurs mod??les mais simple#######################################
-
 
 ####### param??tres d'analyse:
 # ttime_min : jour o?? commencent les analyses
@@ -61,13 +69,14 @@ interv <- seq(pas, interv_max,pas)
 
 #out : creation de la grille de sortie avec ttime_n et interv
 out <- expand.grid(ttime_n=ttime_n,interv=interv)
-head(out)
+
 #i_max : nombre de lignes dans out = nb total d'analyses = nb de cellumes dans la matrice finale
 i_max <- nrow(out) 
 out$i<-seq(1,i_max,1)
 out$nb_survival <- NA
 out$nb_survival_n1 <- NA
 out$prop_survival_n1 <- NA
+
 out$AUCpop <- NA
 out$AUClarve <- NA
 out$AUClarvedrone <-NA
@@ -77,13 +86,16 @@ out$AUCAFF<- NA
 out$AUCLPS <-NA
 out$AUCtotevendtoday <- NA
 out$AUCDRONE <- NA
-#out$pvaluepop <- NA
-#out$pvaluelarvedrone <- NA
-#out$pvaluehoneyenergy <- NA
-#out$pvaluetotmite <- NA
-#out$pvalueAFF <- NA
-#out$pvalueLSP <- NA
-#out$pvaluetotevendtoday <- NA
+out$AUCweight <- NA
+
+out$pvaluepop <- NA
+out$pvaluelarve <- NA
+out$pvaluehoneyenergy <- NA
+out$pvaluetotmite <- NA
+out$pvalueAFF <- NA
+out$pvalueLSP <- NA
+out$pvaluetotevendtoday <- NA
+out$pvalueweight <- NA
 
 ###trouv?? le signe de la pente du glm
 out$signepop <- NA
@@ -95,6 +107,7 @@ out$signeAFF<- NA
 out$signeLPS <-NA
 out$signetotevendtoday <- NA
 out$signedrone <- NA
+out$signeweight <- NA
 
 
 
@@ -111,12 +124,15 @@ for(i in 1:i_max) {
   colnames(futur_i)[2]<-"survival_n1" # changer le nom de la colonne survival dans futur_i
   
   etat_futur<-merge(etat_i,futur_i,by="param") #importation des donn??es survie future dans un m??me tableau
+  etat_futur$TotalWeight <-((etat_futur$TotalIHbees+etat_futur$TotalForagers)*0.1 + etat_futur$TotalDrones*0.2+etat_futur$TotalLarvae*0.0853+
+                              etat_futur$TotalDroneLarvae*0.1137333/12.78)/1000 +etat_futur$HoneyEnergyStore
   
   out[i,"nb_survival"] <- sum(etat_futur$survival)
   out[i,"nb_survival_n1"] <- sum(etat_futur$survival_n1)
   out[i,"prop_survival_n1"] <- out[i,"nb_survival_n1"]/out[i,"nb_survival"]
   
   if(out[i,"prop_survival_n1"]<seuil_survival){
+    
     mod1 <- glm(survival_n1 ~ TotalPopSize, family = binomial, data = etat_futur)
     mod2 <- glm(survival_n1 ~ TotalLarvae,  family = binomial, data = etat_futur)
     mod3 <- glm(survival_n1 ~ TotalDroneLarvae,  family = binomial, data = etat_futur)
@@ -126,6 +142,8 @@ for(i in 1:i_max) {
     mod7 <- glm(survival_n1 ~ LSP,  family = binomial, data = etat_futur)
     mod8 <- glm(survival_n1 ~ TotalEventsToday,  family = binomial, data = etat_futur)
     mod9 <- glm(survival_n1 ~ TotalDrones, family = binomial, data = etat_futur)
+    mod10 <- glm(survival_n1 ~ TotalWeight, family = binomial, data = etat_futur)
+    
     roc1 <- roc(etat_futur[names(fitted(mod1)), "survival_n1"] ~ fitted(mod1))
     roc2 <- roc(etat_futur[names(fitted(mod2)), "survival_n1"] ~ fitted(mod2))
     roc3 <- roc(etat_futur[names(fitted(mod3)), "survival_n1"] ~ fitted(mod3))
@@ -135,6 +153,8 @@ for(i in 1:i_max) {
     roc7 <- roc(etat_futur[names(fitted(mod7)), "survival_n1"] ~ fitted(mod7))
     roc8 <- roc(etat_futur[names(fitted(mod8)), "survival_n1"] ~ fitted(mod8))
     roc9 <- roc(etat_futur[names(fitted(mod9)), "survival_n1"] ~ fitted(mod9))
+    roc10 <- roc(etat_futur[names(fitted(mod10)), "survival_n1"] ~ fitted(mod10))
+    
     AUC1 <- auc(roc1)
     AUC2 <- auc(roc2)
     AUC3 <- auc(roc3)
@@ -144,6 +164,8 @@ for(i in 1:i_max) {
     AUC7 <- auc(roc7)
     AUC8 <- auc(roc8)
     AUC9 <- auc(roc9)
+    AUC10 <- auc(roc10)
+    
     out[i,"AUCpop"] <- AUC1
     out[i,"AUClarve"] <- AUC2
     out[i,"AUClarvedrone"] <- AUC3
@@ -153,13 +175,18 @@ for(i in 1:i_max) {
     out[i,"AUCLPS"] <- AUC7
     out[i,"AUCtotevendtoday"] <- AUC8
     out[i, "AUCDRONE"] <- AUC9
-    #out[i,"pvaluepop"] <- coef(summary(mod1))[2,4]
-    #out[i,"pvaluelarvae"] <- coef(summary(mod2))[2,4]
-    #out[i,"pvaluehoneyenergy"] <- coef(summary(mod4))[2,4]
-    #out[i,"pvaluetotmite"] <- coef(summary(mod5))[2,4]
-    #out[i,"pvalueAFF"] <- coef(summary(mod6))[2,4]
-    #out[i,"pvalueLSP"] <- coef(summary(mod7))[2,4]
-    #out[i,"pvaluetotevendtoday"] <- coef(summary(mod8))[2,4]
+    out[i,"AUCweight"] <- AUC10
+    
+    out[i,"pvaluepop"] <- coef(summary(mod1))[2,4]
+    out[i,"pvaluelarve"] <- coef(summary(mod2))[2,4]
+    out[i,"pvaluehoneyenergy"] <- coef(summary(mod4))[2,4]
+    out[i,"pvaluetotmite"] <- coef(summary(mod5))[2,4]
+    out[i,"pvalueAFF"] <- coef(summary(mod6))[2,4]
+    out[i,"pvalueLSP"] <- coef(summary(mod7))[2,4]
+    out[i,"pvaluetotevendtoday"] <- coef(summary(mod8))[2,4]
+    out[i,"pvalueweight"] <- coef(summary(mod10))[2,4]
+    
+    
     out[i,"signepop"] <- (sign(coefficients(mod1)[2]))
     out[i,"signelarve"] <- (sign(coefficients(mod2)[2]))
     out[i,"signelarvedrone"] <- (sign(coefficients(mod3)[2]))
@@ -169,27 +196,31 @@ for(i in 1:i_max) {
     out[i,"signeLPS"] <- (sign(coefficients(mod7)[2]))
     out[i,"signetotevendtoday"] <- (sign(coefficients(mod8)[2]))
     out[i,"signedrone"] <- (sign(coefficients(mod9)[2]))
+    out[i,"signeweight"] <- (sign(coefficients(mod10)[2]))
   }
 } 
 
 
 ###Faire les matrices de chaleurs en se basant sur l'AUC
-#matrice AUC
+
 cols <- colorRampPalette(brewer.pal(10, "RdBu"))(256) # la base de couleur utilis??e pour la matrice de chaleur
 par(mfrow = c(1,1))
 #proportion survie
 outmatprop_survival_n1<- matrix(out$prop_survival_n1,length(interv),length(ttime_n),byrow=T)
-fields::image.plot(interv, ttime_n, outmatprop_survival_n1, col=rev(cols), main = "Proprotion de survie", zlim=c(0.5, 1))
+fields::image.plot(interv, ttime_n, outmatprop_survival_n1, col=rev(cols), main = "Proportion de survie", zlim=c(0.5, 1))
 contour(interv,ttime_n, outmatprop_survival_n1, levels = seq(0, 1, by = 0.05),add = TRUE, col = "black")
-par(mfrow = c(3,3))
-#AUClarve
-outmatlarve<- matrix(out$AUClarve,length(interv),length(ttime_n),byrow=T)
-fields::image.plot(interv, ttime_n, outmatlarve, col=rev(cols), main ="Couvain ouvri??re",zlim=c(0.5, 1))
-contour(interv,ttime_n, outmatlarve, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
+
+
+#matrice AUC
+
 #pop
 outmatpop<- matrix(out$AUCpop,length(interv),length(ttime_n),byrow=T)
 fields::image.plot(interv, ttime_n, outmatpop, col=rev(cols), main ="AUC taille population",zlim=c(0.5, 1))
 contour(interv,ttime_n, outmatpop, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
+#AUClarve
+outmatlarve<- matrix(out$AUClarve,length(interv),length(ttime_n),byrow=T)
+fields::image.plot(interv, ttime_n, outmatlarve, col=rev(cols), main ="Couvain ouvri??re",zlim=c(0.5, 1))
+contour(interv,ttime_n, outmatlarve, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
 #AUC Honey Energy Store
 outmatpvaluehoneyenergy<- matrix(out$AUChoneyenergy,length(interv),length(ttime_n),byrow=T)
 fields::image.plot(interv, ttime_n, outmatpvaluehoneyenergy, col=rev(cols), main ="AUC Honey Energy Store", zlim=c(0.5, 1))
@@ -201,7 +232,7 @@ contour(interv,ttime_n, outmatDlarve, levels = seq(0.5, 1, by = 0.05),add = TRUE
 #AUCdrone
 outmatdrone<- matrix(out$AUCDRONE,length(interv),length(ttime_n),byrow=T)
 fields::image.plot(interv, ttime_n, outmatdrone, col=rev(cols), main ="AUC M??le adulte", zlim=c(0.5, 1))
-contour(interv,ttime_n, outmatdrone, contourr,add = TRUE, col = "black")
+contour(interv,ttime_n, outmatdrone, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
 #AUC mite
 outmatmite<- matrix(out$AUCtotmite,length(interv),length(ttime_n),byrow=T)
 fields::image.plot(interv, ttime_n, outmatmite, col=rev(cols), main ="AUC mite", zlim=c(0.5, 1))
@@ -218,6 +249,11 @@ contour(interv,ttime_n, outmatLPS, levels = seq(0.5, 1, by = 0.05),add = TRUE, c
 outmatevend<- matrix(out$AUCtotevendtoday,length(interv),length(ttime_n),byrow=T)
 fields::image.plot(interv, ttime_n, outmatevend, col=rev(cols), main ="AUC Total evend day", zlim=c(0.5, 1))
 contour(interv,ttime_n, outmatevend, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
+#AUCweight
+outmatweight<- matrix(out$AUCweight,length(interv),length(ttime_n),byrow=T)
+fields::image.plot(interv, ttime_n, outmatweight, col=rev(cols), main ="AUC Poids de la colonie",xlab="Pr??diction (en jours)", ylab="Jours d'observation", zlim=c(0.4, 1))
+contour(interv,ttime_n, outmatweight, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
+
 
 ###matrice p value
 
@@ -227,13 +263,9 @@ outmat<- matrix(out$AUCpop,length(interv),length(ttime_n),byrow=T)
 fields::image.plot(interv, ttime_n, outmat, col=rev(cols), main ="")
 contour(interv,ttime_n, outmat, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
 #AUClarve
-outmatpvaluelarvae<- matrix(out$pvaluelarvae,length(interv),length(ttime_n),byrow=T)
-fields::image.plot(interv, ttime_n, outmatpvaluelarvae, col=rev(cols), main ="p value larve")
-contour(interv,ttime_n, outmatpvaluelarvae, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
-#AUC larve drones
-outmatDlarve<- matrix(out$AUClarvedrone,length(interv),length(ttime_n),byrow=T)
-fields::image.plot(interv, ttime_n, outmatDlarve, col=rev(cols), main ="p value larve drone")
-contour(interv,ttime_n, outmatDlarve, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
+outmatpvaluelarve<- matrix(out$pvaluelarve,length(interv),length(ttime_n),byrow=T)
+fields::image.plot(interv, ttime_n, outmatpvaluelarve, col=rev(cols), main ="p value larve")
+contour(interv,ttime_n, outmatpvaluelarve, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
 #AUC honey
 outmathoney<- matrix(out$AUChoneyenergy,length(interv),length(ttime_n),byrow=T)
 fields::image.plot(interv, ttime_n, outmathoney, col=rev(cols), main ="p value honey")
@@ -254,9 +286,13 @@ contour(interv,ttime_n, outmatpvalueLSP, levels = seq(0.5, 1, by = 0.05),add = T
 outmapvaluetotevendtoday<- matrix(out$pvaluetotevendtoday,length(interv),length(ttime_n),byrow=T)
 fields::image.plot(interv, ttime_n, outmapvaluetotevendtoday, col=rev(cols), main ="p value evend")
 contour(interv,ttime_n, outmapvaluetotevendtoday, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
+#AUCweight
+outmatpvalueweight<- matrix(out$pvalueweight,length(interv),length(ttime_n),byrow=T)
+fields::image.plot(interv, ttime_n, outmatpvalueweight, col=rev(cols), main ="p value Poids")
+contour(interv,ttime_n, outmatpvalueweight, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
 
 ###matrice signe
-par(mfrow = c(3,3))
+
 #signe larve
 matlarvesigne<- matrix(out$signelarve,length(interv),length(ttime_n),byrow=T)
 fields::image.plot(interv, ttime_n, matlarvesigne, col=rev(cols), main ="Larve Signe")
@@ -293,84 +329,10 @@ contour(interv,ttime_n, matevendsigne, levels = seq(-1, 1, by = 0.5),add = TRUE,
 matdronesigne<- matrix(out$signedrone,length(interv),length(ttime_n),byrow=T)
 fields::image.plot(interv, ttime_n, matdronesigne, col=rev(cols), main ="Total evend day signe")
 contour(interv,ttime_n, matdronesigne, levels = seq(-1, 1, by = 0.5),add = TRUE, col = "black")
-
-####poids
-simulRes$TotalWeight <- NA
-
-simulRes$TotalWeight <-((simulRes$TotalIHbees+simulRes$TotalForagers)*0.1 + simulRes$TotalDrones*0.2+simulRes$TotalLarvae*0.0853+simulRes$TotalDroneLarvae*0.1137333)/1000 +simulRes$HoneyEnergyStore #calcul pour obtenir le poids de la colonie
-
-plot(simulRes$ttime, simulRes$TotalWeight)
-simulRes$TotalWeight[simulRes$TotalWeight<0] = 0 #ne pas prendre les poids n??gatifs
-simulRes$HoneyEnergyStore[simulRes$HoneyEnergyStore<0]=0 #ne pas prendre les poids n??gatifs
-
-####### param??tres d'analyse:
-# ttime_min : jour o?? commencent les analyses
-ttime_min<-100 
-#ttime_max : jour o?? finissent les analyses
-ttime_max<-220 
-# combien de temps plus tard on regarde 
-pas <- 10
-
-seuil_survival <- 0.99  #Seuil max de survie entre "ttime_n" et "ttime_n+interv" pour faire l'analyse
-
-####### param??tre calcul??
-#interv_max : le plus grand intervalle possible
-interv_max <- 485-ttime_max
-
-#ttime_n : moment o?? on souhaite regarder pour un indicateur
-ttime_n <- seq(ttime_min,ttime_max,pas)
-# temps ?? pr??dire (intervalle dans le temps)
-interv <- seq(pas, interv_max,pas)
-
-###### Initialisation de la boucle: pr??paration des objets de sortie
-
-#out : creation de la grille de sortie avec ttime_n et interv
-out <- expand.grid(ttime_n=ttime_n,interv=interv)
-head(out)
-#i_max : nombre de lignes dans out = nb total d'analyses = nb de cellumes dans la matrice finale
-i_max <- nrow(out) 
-out$i<-seq(1,i_max,1)
-out$nb_survival <- NA
-out$nb_survival_n1 <- NA
-out$prop_survival_n1 <- NA
-
-out$AUCweight <- NA
-out$signeweight <- NA
-
-### boucle
-
-#i<-4
-i <-1
-for(i in 1:i_max) {
-  time_i <- out[i,"ttime_n"]
-  interv_i <- out[i,"interv"]
-  
-  etat_i <- subset(simulRes,ttime==time_i&survival==1) #donn??e pr??sente en selectionnant que les colonies qui survivent
-  futur_i <- subset(simulRes,ttime==time_i+interv_i)[,c("param","survival")] # donn??e future 
-  colnames(futur_i)[2]<-"survival_n1" # changer le nom de la colonne survival dans futur_i
-  
-  etat_futur<-merge(etat_i,futur_i,by="param") #importation des donn??es survie future dans un m??me tableau
-  etat_futur$TotalWeight <-((etat_futur$TotalIHbees+etat_futur$TotalForagers)*0.1 + etat_futur$TotalDrones*0.2+etat_futur$TotalLarvae*0.0853+
-                              etat_futur$TotalDroneLarvae*0.1137333/12.78)/1000 +etat_futur$HoneyEnergyStore
-  out[i,"nb_survival"] <- sum(etat_futur$survival)
-  out[i,"nb_survival_n1"] <- sum(etat_futur$survival_n1)
-  out[i,"prop_survival_n1"] <- out[i,"nb_survival_n1"]/out[i,"nb_survival"]
-  
-  if(out[i,"prop_survival_n1"]<seuil_survival){
-    mod30 <- glm(survival_n1 ~ TotalWeight, family = binomial, data = etat_futur)
-    roc30 <- roc(etat_futur[names(fitted(mod30)), "survival_n1"] ~ fitted(mod30))
-    AUC30 <- auc(roc30)
-    out[i,"AUCweight"] <- AUC30
-    out[i,"signeweight"] <- (sign(coefficients(mod30)[2]))
-  }
-}
-
-outmatweight<- matrix(out$AUCweight,length(interv),length(ttime_n),byrow=T)
-
-fields::image.plot(interv, ttime_n, outmatweight, col=rev(cols), main ="Poids de la colonie",xlab="Pr??diction (en jours)", ylab="Jours d'observation", zlim=c(0.4, 1))
-contour(interv,ttime_n, outmatweight, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
-
-
+#signe Poids
+matweightsigne <- matrix(out$signeweight,length(interv),length(ttime_n),byrow=T)
+fields::image.plot(interv, ttime_n, matweightsigne, col=rev(cols), main ="Poids signe")
+contour(interv,ttime_n, matweightsigne, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
 
 
 

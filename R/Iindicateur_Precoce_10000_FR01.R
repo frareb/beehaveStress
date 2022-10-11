@@ -20,7 +20,7 @@ library("visreg")
 # 2. Dataset
 # --------------------------------------------------------------------------
 simulRes <- read.table(
-  "resultCombinedStressMiseFormeSoleneTOT10000.csv", 
+  "input_data/resultCombinedStressMiseFormeSoleneTOT10000.csv", 
   sep = ";", dec = ".", header = TRUE
 )
 str(simulRes)

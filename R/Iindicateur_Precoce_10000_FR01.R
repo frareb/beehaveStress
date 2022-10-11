@@ -29,79 +29,11 @@ simulRes$survival <- as.logical(simulRes$survival)
 # 3. Data analysis
 # --------------------------------------------------------------------------
 
+
 ##################################################################################
 ##################################### Matrice de chaleur #########################
 ##################################################################################
 
-#############################1 seul mod??le #######################################
-
-####### param??tres d'analyse:
-# ttime_min : jour o?? commencent les analyses
-ttime_min<-100 
-#ttime_max : jour o?? finissent les analyses
-ttime_max<-300 
-# combien de temps plus tard on regarde 
-pas <- 10
-
-seuil_survival <- 0.95  #Seuil max de survie entre "ttime_n" et "ttime_n+interv" pour faire l'analyse
-seuil_AUCsigne <- 0.80
-####### param??tre calcul??
-#interv_max : le plus grand intervalle possible
-interv_max <- 485-ttime_max
-
-#ttime_n : moment o?? on souhaite regarder pour un indicateur
-ttime_n <- seq(ttime_min,ttime_max,pas)
-# temps ?? pr??dire (intervalle dans le temps)
-interv <- seq(pas, interv_max,pas)
-
-###### Initialisation de la boucle: pr??paration des objets de sortie
-
-#out : creation de la grille de sortie avec ttime_n et interv
-out <- expand.grid(ttime_n=ttime_n,interv=interv)
-head(out)
-#i_max : nombre de lignes dans out = nb total d'analyses = nb de cellumes dans la matrice finale
-i_max <- nrow(out) 
-out$i<-seq(1,i_max,1)
-out$nb_survival <- NA
-out$nb_survival_n1 <- NA
-out$prop_survival_n1 <- NA
-#out$AICout <- NA
-out$AUCpop <- NA
-out$pvalue <- NA
-
-### boucle
-
-#i<-4
-i <-1
-for(i in 1:i_max) {
-  time_i <- out[i,"ttime_n"]
-  interv_i <- out[i,"interv"]
-  
-  etat_i <- subset(simulRes,ttime==time_i&survival==1) #donn??e pr??sente en selectionnant que les colonies qui survivent
-  futur_i <- subset(simulRes,ttime==time_i+interv_i)[,c("param","survival")] # donn??e future 
-  colnames(futur_i)[2]<-"survival_n1" # changer le nom de la colonne survival dans futur_i
-  
-  etat_futur<-merge(etat_i,futur_i,by="param") #importation des donn??es survie future dans un m??me tableau
-  
-  out[i,"nb_survival"] <- sum(etat_futur$survival)
-  out[i,"nb_survival_n1"] <- sum(etat_futur$survival_n1)
-  out[i,"prop_survival_n1"] <- out[i,"nb_survival_n1"]/out[i,"nb_survival"]
-  
-  if(out[i,"prop_survival_n1"]<seuil_survival){
-    mod1 <- glm(survival_n1 ~ TotalPopSize, family = binomial, data = etat_futur)
-    #out[i,"AICout"] <- AIC(mod1)
-    roc1 <- roc(etat_futur[names(fitted(mod1)), "survival_n1"] ~ fitted(mod1))
-    AUC1 <- auc(roc1)
-    out[i,"AUCpop"] <- AUC1
-    out[i,"pvalue"] <- coef(summary(mod1))[2,4] # extraction de la p value
-  }
-}
-
-#matrice AUC
-cols <- colorRampPalette(brewer.pal(10, "RdBu"))(256)
-outmat<- matrix(out$AUCpop,length(interv),length(ttime_n),byrow=T)
-fields::image.plot(interv, ttime_n, outmat, rev(col=cols), main ="AUC")
-contour(interv,ttime_n, outmat, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
 
 #############################plusieurs mod??les mais simple#######################################
 

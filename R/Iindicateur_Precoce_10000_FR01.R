@@ -48,8 +48,17 @@ print(data.frame(deadColoniesP , aliveColoniesP))
 simulRes$survie=ifelse(simulRes$survival=="1", "survive", "meurt")
 tableau <- table (simulRes$ttime, simulRes$survie)
 #charg?? le tableau d??j?? fait
-tableau <- read.table("/Users/solene/Desktop/out graph ect/time_meurt_vie.csv", sep=";",dec=".",h=T)
-plot(tableau$Time, tableau$survive, type = "l", main="Survie des colonies en fonction du temps", xlab="Temps (en jours)", ylab="Nombre de colonie en vie", lwd=5)
+tableau <- read.table(
+  "/Users/solene/Desktop/out graph ect/time_meurt_vie.csv", 
+  sep = ";", dec = ".", header = TRUE
+)
+plot(
+  x = tableau$Time, 
+  y = tableau$survive, 
+  type = "l", 
+  main = "Survie des colonies en fonction du temps", 
+  xlab = "Temps (en jours)", ylab = "Nombre de colonie en vie", lwd = 5
+)
 
 #####Graphique, ??volution du nombre de colonies morte en fonction du temps
 

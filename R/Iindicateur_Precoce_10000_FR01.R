@@ -23,49 +23,11 @@ simulRes <- read.table(
   "input_data/resultCombinedStressMiseFormeSoleneTOT10000.csv", 
   sep = ";", dec = ".", header = TRUE
 )
-str(simulRes)
 simulRes$survival <- as.logical(simulRes$survival)
-unique(simulRes$DateCollapse)
+
 
 # 3. Data analysis
 # --------------------------------------------------------------------------
-# Percentage of alive and dead colonies
-# dead colonies
-vecDead <- unique(simulRes[simulRes$survival == FALSE, "param"])
-deadColoniesP <- length(vecDead)/length(unique(simulRes$param))
-# alive colonies
-vecAlive = unique(simulRes$param)[is.na(match(unique(simulRes$param),vecDead))]
-aliveColoniesP <- length(vecAlive)/length(unique(simulRes$param))
-# dead / alive colonies percentage
-print(data.frame(deadColoniesP , aliveColoniesP))
-
-
-
-
-
-##### Courbe de survie des colonies en fonction du temps 
-#obtention du tableau de survie en fonction du temps
-simulRes$survie=ifelse(simulRes$survival=="1", "survive", "meurt")
-tableau <- table (simulRes$ttime, simulRes$survie)
-#charg?? le tableau d??j?? fait
-tableau <- read.table(
-  "/Users/solene/Desktop/out graph ect/time_meurt_vie.csv", 
-  sep = ";", dec = ".", header = TRUE
-)
-plot(
-  x = tableau$Time, 
-  y = tableau$survive, 
-  type = "l", 
-  main = "Survie des colonies en fonction du temps", 
-  xlab = "Temps (en jours)", ylab = "Nombre de colonie en vie", lwd = 5
-)
-
-#####Graphique, ??volution du nombre de colonies morte en fonction du temps
-
-plot(simulRes$ttime, main = "nombre de colonie morte en fonction du temps", xlab ="temps", ylab ="nombre de colonie morte")
-
-out <- read.table("/Users/solene/Desktop/out graph ect/fichier excel out/SUPER OUT COMPLET.csv", sep=";",dec=".",h=T)
-
 
 ##################################################################################
 ##################################### Matrice de chaleur #########################

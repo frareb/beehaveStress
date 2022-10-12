@@ -46,6 +46,9 @@ simulRes$HoneyEnergyStore[simulRes$HoneyEnergyStore<0]=0 #ne pas prendre les poi
 
 #############################plusieurs mod??les mais simple#######################################
 
+
+###### Initialisation de la boucle: pr??paration des objets de sortie
+
 ####### param??tres d'analyse:
 # ttime_min : jour o?? commencent les analyses
 ttime_min<-100 
@@ -88,6 +91,17 @@ out$AUCtotevendtoday <- NA
 out$AUCDRONE <- NA
 out$AUCweight <- NA
 
+out$modpopNRJ <- NA # mod??le selectionner par le stepwise lors de l'interaction population * miel
+out$modpopDL <- NA  # mod??le selectionner par le stepwise lors de l'interaction population * drone
+out$modLarveDL <- NA  # mod??le selectionner par le stepwise lors de l'interaction larve * drone
+out$modLarveNRJ <- NA  # mod??le selectionner par le stepwise lors de l'interaction larve * miel
+out$modNRJDL <- NA  # mod??le selectionner par le stepwise lors de l'interaction drone * miel
+out$AUCpopNRJ <-NA # population en interation avec miel
+out$AUCpopDL <-NA #population en interaction avec drone
+out$AUCLarveDL <-NA #larve et drone en interaction
+out$AUCLarveNRJ <-NA #larve et miel en interaction
+out$AUCNRJDL <-NA #larve et drone en interaction
+
 out$pvaluepop <- NA
 out$pvaluelarve <- NA
 out$pvaluehoneyenergy <- NA
@@ -116,6 +130,7 @@ out$signeweight <- NA
 i<-1
 
 for(i in 1:i_max) {
+
   time_i <- out[i,"ttime_n"]
   interv_i <- out[i,"interv"]
   
@@ -144,6 +159,38 @@ for(i in 1:i_max) {
     mod9 <- glm(survival_n1 ~ TotalDrones, family = binomial, data = etat_futur)
     mod10 <- glm(survival_n1 ~ TotalWeight, family = binomial, data = etat_futur)
     
+    mod101 <- glm(survival_n1 ~ TotalPopSize*TotalLarvae, family = binomial, data = etat_futur)
+    mod102 <- glm(survival_n1 ~ TotalPopSize*HoneyEnergyStore, family = binomial, data = etat_futur)
+    mod103 <- glm(survival_n1 ~ TotalPopSize*TotalDroneLarvae, family = binomial, data = etat_futur)
+    mod104 <- glm(survival_n1 ~ TotalLarvae*HoneyEnergyStore, family = binomial, data = etat_futur)
+    mod105 <- glm(survival_n1 ~ TotalLarvae*TotalDroneLarvae, family = binomial, data = etat_futur)
+    mod106 <- glm(survival_n1 ~ HoneyEnergyStore*TotalDroneLarvae, family = binomial, data = etat_futur)
+    #mod??le selectionner par le stepwise
+    modele_selectionne1 <- step(mod101)
+    modele_selectionne2 <- step(mod102)
+    modele_selectionne3 <- step(mod103)
+    modele_selectionne4 <- step(mod104)
+    modele_selectionne5 <- step(mod105)
+    modele_selectionne6 <- step(mod106)
+    modeleselec1 <-summary(modele_selectionne1)
+    modeleselec2 <-summary(modele_selectionne2)
+    modeleselec3 <-summary(modele_selectionne3)
+    modeleselec4 <-summary(modele_selectionne4)
+    modeleselec5 <-summary(modele_selectionne5)
+    modeleselec6 <-summary(modele_selectionne6)
+    modeleselec21<-as.character(modeleselec1$call)
+    modeleselec22<-as.character(modeleselec2$call)
+    modeleselec23<-as.character(modeleselec3$call)
+    modeleselec24<-as.character(modeleselec4$call)
+    modeleselec25<-as.character(modeleselec5$call)
+    modeleselec26<-as.character(modeleselec6$call)
+    out[i, "modint"] <- modeleselec21 [2]
+    out[i, "modpopNRJ"] <- modeleselec22 [2]
+    out[i, "modpopDL"] <- modeleselec23 [2]
+    out[i, "modLarveDL"] <- modeleselec24 [2]
+    out[i, "modLarveNRJ"] <- modeleselec25 [2]
+    out[i, "modNRJDL"] <- modeleselec26 [2]
+    
     roc1 <- roc(etat_futur[names(fitted(mod1)), "survival_n1"] ~ fitted(mod1))
     roc2 <- roc(etat_futur[names(fitted(mod2)), "survival_n1"] ~ fitted(mod2))
     roc3 <- roc(etat_futur[names(fitted(mod3)), "survival_n1"] ~ fitted(mod3))
@@ -154,6 +201,12 @@ for(i in 1:i_max) {
     roc8 <- roc(etat_futur[names(fitted(mod8)), "survival_n1"] ~ fitted(mod8))
     roc9 <- roc(etat_futur[names(fitted(mod9)), "survival_n1"] ~ fitted(mod9))
     roc10 <- roc(etat_futur[names(fitted(mod10)), "survival_n1"] ~ fitted(mod10))
+    roc101 <- roc(etat_futur[names(fitted(mod101)), "survival_n1"] ~ fitted(mod101)) #MS = Modele Selectionn??
+    roc102 <- roc(etat_futur[names(fitted(mod102)), "survival_n1"] ~ fitted(mod102)) #MS = Modele Selectionn??
+    roc103 <- roc(etat_futur[names(fitted(mod103)), "survival_n1"] ~ fitted(mod103)) #MS = Modele Selectionn??
+    roc104 <- roc(etat_futur[names(fitted(mod104)), "survival_n1"] ~ fitted(mod104)) #MS = Modele Selectionn??
+    roc105 <- roc(etat_futur[names(fitted(mod105)), "survival_n1"] ~ fitted(mod105)) #MS = Modele Selectionn??
+    roc106 <- roc(etat_futur[names(fitted(mod106)), "survival_n1"] ~ fitted(mod106)) #MS = Modele Selectionn??
     
     AUC1 <- auc(roc1)
     AUC2 <- auc(roc2)
@@ -165,6 +218,12 @@ for(i in 1:i_max) {
     AUC8 <- auc(roc8)
     AUC9 <- auc(roc9)
     AUC10 <- auc(roc10)
+    AUCMS1 <- auc(roc101)
+    AUCMS2 <- auc(roc102)
+    AUCMS3 <- auc(roc103)
+    AUCMS4 <- auc(roc104)
+    AUCMS5 <- auc(roc105)
+    AUCMS6 <- auc(roc106)
     
     out[i,"AUCpop"] <- AUC1
     out[i,"AUClarve"] <- AUC2
@@ -176,6 +235,12 @@ for(i in 1:i_max) {
     out[i,"AUCtotevendtoday"] <- AUC8
     out[i, "AUCDRONE"] <- AUC9
     out[i,"AUCweight"] <- AUC10
+    
+    out[i,"AUCpopNRJ"] <- AUCMS2
+    out[i,"AUCpopDL"] <- AUCMS3
+    out[i,"AUCLarveNRJ"] <- AUCMS4
+    out[i,"AUCLarveDL"] <- AUCMS5
+    out[i,"AUCNRJDL"] <- AUCMS6
     
     out[i,"pvaluepop"] <- coef(summary(mod1))[2,4]
     out[i,"pvaluelarve"] <- coef(summary(mod2))[2,4]
@@ -253,6 +318,29 @@ contour(interv,ttime_n, outmatevend, levels = seq(0.5, 1, by = 0.05),add = TRUE,
 outmatweight<- matrix(out$AUCweight,length(interv),length(ttime_n),byrow=T)
 fields::image.plot(interv, ttime_n, outmatweight, col=rev(cols), main ="AUC Poids de la colonie",xlab="Pr??diction (en jours)", ylab="Jours d'observation", zlim=c(0.4, 1))
 contour(interv,ttime_n, outmatweight, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
+
+#matrice pop*NRJ
+matAUCpopNRJ<- matrix(out$AUCpopNRJ,length(interv),length(ttime_n),byrow=T)
+fields::image.plot(interv, ttime_n, matAUCpopNRJ, col=rev(cols), main ="AUC interaction pop NRJ", zlim = c(0.5, 1))
+contour(interv,ttime_n, matAUCpopNRJ, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
+#matrice pop*DL
+matAUCpopDL<- matrix(out$AUCpopDL,length(interv),length(ttime_n),byrow=T)
+fields::image.plot(interv, ttime_n, matAUCpopDL, col=rev(cols), main ="AUC interaction pop DL", zlim = c(0.5, 1))
+contour(interv,ttime_n, matAUCpopDL, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
+#matrice larve*DL
+matAUCLarveDL<- matrix(out$AUCLarveDL,length(interv),length(ttime_n),byrow=T)
+fields::image.plot(interv, ttime_n, matAUCLarveDL, col=rev(cols), main ="AUC interaction Larve DL", zlim = c(0.5, 1))
+contour(interv,ttime_n, matAUCLarveDL, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
+#matrice larve*NRJ
+matAUCLarveNRJ<- matrix(out$AUCLarveNRJ,length(interv),length(ttime_n),byrow=T)
+fields::image.plot(interv, ttime_n, matAUCLarveNRJ, col=rev(cols), main ="AUC interaction Larve NRJ", zlim = c(0.5, 1))
+contour(interv,ttime_n, matAUCLarveNRJ, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
+#matrice DL*NRJ
+matAUCNRJDL<- matrix(out$AUCNRJDL,length(interv),length(ttime_n),byrow=T)
+fields::image.plot(interv, ttime_n, matAUCNRJDL, col=rev(cols), main ="AUC interaction DL NRJ", zlim = c(0.5, 1))
+contour(interv,ttime_n, matAUCNRJDL, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
+
+
 
 
 ###matrice p value
@@ -334,153 +422,3 @@ matweightsigne <- matrix(out$signeweight,length(interv),length(ttime_n),byrow=T)
 fields::image.plot(interv, ttime_n, matweightsigne, col=rev(cols), main ="Poids signe")
 contour(interv,ttime_n, matweightsigne, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
 
-
-
-################################## Mod??le en interaction ##################################
-###############interaction double
-
-####### param??tres d'analyse:
-# ttime_min : jour o?? commencent les analyses
-ttime_min<-100 
-#ttime_max : jour o?? finissent les analyses
-ttime_max<-220
-# combien de temps plus tard on regarde 
-pas <- 10
-
-seuil_survival <- 0.99  #Seuil max de survie entre "ttime_n" et "ttime_n+interv" pour faire l'analyse
-
-####### param??tre calcul??
-#interv_max : le plus grand intervalle possible
-interv_max <- 485-ttime_max
-
-#ttime_n : moment o?? on souhaite regarder pour un indicateur
-ttime_n <- seq(ttime_min,ttime_max,pas)
-# temps ?? pr??dire (intervalle dans le temps)
-interv <- seq(pas, interv_max,pas)
-
-###### Initialisation de la boucle: pr??paration des objets de sortie
-
-#out : creation de la grille de sortie avec ttime_n et interv
-out <- expand.grid(ttime_n=ttime_n,interv=interv)
-#i_max : nombre de lignes dans out = nb total d'analyses = nb de cellumes dans la matrice finale
-i_max <- nrow(out) 
-out$i<-seq(1,i_max,1)
-out$nb_survival <- NA
-out$nb_survival_n1 <- NA
-out$prop_survival_n1 <- NA
-out$modpopNRJ <- NA # mod??le selectionner par le stepwise lors de l'interaction population * miel
-out$modpopDL <- NA  # mod??le selectionner par le stepwise lors de l'interaction population * drone
-out$modLarveDL <- NA  # mod??le selectionner par le stepwise lors de l'interaction larve * drone
-out$modLarveNRJ <- NA  # mod??le selectionner par le stepwise lors de l'interaction larve * miel
-out$modNRJDL <- NA  # mod??le selectionner par le stepwise lors de l'interaction drone * miel
-out$AUCpopNRJ <-NA # population en interation avec miel
-out$AUCpopDL <-NA #population en interaction avec drone
-out$AUCLarveDL <-NA #larve et drone en interaction
-out$AUCLarveNRJ <-NA #larve et miel en interaction
-out$AUCNRJDL <-NA #larve et drone en interaction
-
-
-### boucle
-
-i<-1
-
-for(i in 1:i_max) {
-  time_i <- out[i,"ttime_n"]
-  interv_i <- out[i,"interv"]
-  
-  etat_i <- subset(simulRes,ttime==time_i&survival==1) #donn??e pr??sente en selectionnant que les colonies qui survivent
-  futur_i <- subset(simulRes,ttime==time_i+interv_i)[,c("param","survival")] # donn??e future 
-  colnames(futur_i)[2]<-"survival_n1" # changer le nom de la colonne survival dans futur_i
-  
-  etat_futur<-merge(etat_i,futur_i,by="param") #importation des donn??es survie future dans un m??me tableau
-  
-  out[i,"nb_survival"] <- sum(etat_futur$survival)
-  out[i,"nb_survival_n1"] <- sum(etat_futur$survival_n1)
-  out[i,"prop_survival_n1"] <- out[i,"nb_survival_n1"]/out[i,"nb_survival"]
-  
-  if(out[i,"prop_survival_n1"]<seuil_survival){
-    mod101 <- glm(survival_n1 ~ TotalPopSize*TotalLarvae, family = binomial, data = etat_futur)
-    mod102 <- glm(survival_n1 ~ TotalPopSize*HoneyEnergyStore, family = binomial, data = etat_futur)
-    mod103 <- glm(survival_n1 ~ TotalPopSize*TotalDroneLarvae, family = binomial, data = etat_futur)
-    mod104 <- glm(survival_n1 ~ TotalLarvae*HoneyEnergyStore, family = binomial, data = etat_futur)
-    mod105 <- glm(survival_n1 ~ TotalLarvae*TotalDroneLarvae, family = binomial, data = etat_futur)
-    mod106 <- glm(survival_n1 ~ HoneyEnergyStore*TotalDroneLarvae, family = binomial, data = etat_futur)
- #mod??le selectionner par le stepwise
-    modele_selectionne1 <- step(mod101)
-    modele_selectionne2 <- step(mod102)
-    modele_selectionne3 <- step(mod103)
-    modele_selectionne4 <- step(mod104)
-    modele_selectionne5 <- step(mod105)
-    modele_selectionne6 <- step(mod106)
-    modeleselec1 <-summary(modele_selectionne1)
-    modeleselec2 <-summary(modele_selectionne2)
-    modeleselec3 <-summary(modele_selectionne3)
-    modeleselec4 <-summary(modele_selectionne4)
-    modeleselec5 <-summary(modele_selectionne5)
-    modeleselec6 <-summary(modele_selectionne6)
-    modeleselec21<-as.character(modeleselec1$call)
-    modeleselec22<-as.character(modeleselec2$call)
-    modeleselec23<-as.character(modeleselec3$call)
-    modeleselec24<-as.character(modeleselec4$call)
-    modeleselec25<-as.character(modeleselec5$call)
-    modeleselec26<-as.character(modeleselec6$call)
-    out[i, "modint"] <- modeleselec21 [2]
-    out[i, "modpopNRJ"] <- modeleselec22 [2]
-    out[i, "modpopDL"] <- modeleselec23 [2]
-    out[i, "modLarveDL"] <- modeleselec24 [2]
-    out[i, "modLarveNRJ"] <- modeleselec25 [2]
-    out[i, "modNRJDL"] <- modeleselec26 [2]
- #auc
-    roc1 <- roc(etat_futur[names(fitted(mod101)), "survival_n1"] ~ fitted(mod101)) #MS = Modele Selectionn??
-    roc2 <- roc(etat_futur[names(fitted(mod102)), "survival_n1"] ~ fitted(mod102)) #MS = Modele Selectionn??
-    roc3 <- roc(etat_futur[names(fitted(mod103)), "survival_n1"] ~ fitted(mod103)) #MS = Modele Selectionn??
-    roc4 <- roc(etat_futur[names(fitted(mod104)), "survival_n1"] ~ fitted(mod104)) #MS = Modele Selectionn??
-    roc5 <- roc(etat_futur[names(fitted(mod105)), "survival_n1"] ~ fitted(mod105)) #MS = Modele Selectionn??
-    roc6 <- roc(etat_futur[names(fitted(mod106)), "survival_n1"] ~ fitted(mod106)) #MS = Modele Selectionn??
-    AUCMS1 <- auc(roc1)
-    AUCMS2 <- auc(roc2)
-    AUCMS3 <- auc(roc3)
-    AUCMS4 <- auc(roc4)
-    AUCMS5 <- auc(roc5)
-    AUCMS6 <- auc(roc6)
-    out[i,"AUCpopNRJ"] <- AUCMS2
-    out[i,"AUCpopDL"] <- AUCMS3
-    out[i,"AUCLarveNRJ"] <- AUCMS4
-    out[i,"AUCLarveDL"] <- AUCMS5
-    out[i,"AUCNRJDL"] <- AUCMS6
-
-  }
-} 
-
-####matrice d'interaction
-par(mfrow = c(2,3))
-
-#matrice pop*larve
-matAUCpoplarve<- matrix(out$AUCpoplarve,length(interv),length(ttime_n),byrow=T)
-fields::image.plot(interv, ttime_n, matAUCpoplarve, col=rev(cols), main ="AUC interaction pop larve", zlim = c(0.5, 1))
-contour(interv,ttime_n, matAUCpoplarve, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
-#matrice pop*NRJ
-matAUCpopNRJ<- matrix(out$AUCpopNRJ,length(interv),length(ttime_n),byrow=T)
-fields::image.plot(interv, ttime_n, matAUCpopNRJ, col=rev(cols), main ="AUC interaction pop NRJ", zlim = c(0.5, 1))
-contour(interv,ttime_n, matAUCpopNRJ, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
-#matrice pop*DL
-matAUCpopDL<- matrix(out$AUCpopDL,length(interv),length(ttime_n),byrow=T)
-fields::image.plot(interv, ttime_n, matAUCpopDL, col=rev(cols), main ="AUC interaction pop DL", zlim = c(0.5, 1))
-contour(interv,ttime_n, matAUCpopDL, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
-#matrice larve*DL
-matAUCLarveDL<- matrix(out$AUCLarveDL,length(interv),length(ttime_n),byrow=T)
-fields::image.plot(interv, ttime_n, matAUCLarveDL, col=rev(cols), main ="AUC interaction Larve DL", zlim = c(0.5, 1))
-contour(interv,ttime_n, matAUCLarveDL, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
-#matrice larve*NRJ
-matAUCLarveNRJ<- matrix(out$AUCLarveNRJ,length(interv),length(ttime_n),byrow=T)
-fields::image.plot(interv, ttime_n, matAUCLarveNRJ, col=rev(cols), main ="AUC interaction Larve NRJ", zlim = c(0.5, 1))
-contour(interv,ttime_n, matAUCLarveNRJ, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
-#matrice DL*NRJ
-matAUCNRJDL<- matrix(out$AUCNRJDL,length(interv),length(ttime_n),byrow=T)
-fields::image.plot(interv, ttime_n, matAUCNRJDL, col=rev(cols), main ="AUC interaction DL NRJ", zlim = c(0.5, 1))
-contour(interv,ttime_n, matAUCNRJDL, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
-
-type <- read.table("/Users/solene/Desktop/out graph ect/out_avec_modelestep_et_type.csv", sep=";",dec=".",h=T)
-mattype<- matrix(type$type,length(interv),length(ttime_n),byrow=T)
-fields::image.plot(interv, ttime_n, mattype, col=rev(cols), main ="Mod??le gard?? 2", nlevel = 5)
-contour(interv,ttime_n, mattype, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")

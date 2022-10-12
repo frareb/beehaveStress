@@ -52,6 +52,9 @@ save(heatmap_pop_larve_plot, file = "New_graphs/Figure_pop_larve_v1.RData")
 load("./New_graphs/Figure_pop_v1.RData")
 load("./New_graphs/Figure_larve_v1.RData")
 load("./New_graphs/Figure_pop_larve_v1.RData")
-heatmap_pop_plot
-heatmap_larve_plot
-heatmap_pop_larve_plot
+
+pdf(file = "./New_graphs/heatmap.pdf", width = 12)
+  heatmap_pop_plot
+  heatmap_larve_plot
+  heatmap_pop_larve_plot
+dev.off()

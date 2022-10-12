@@ -272,6 +272,8 @@ for(i in 1:i_max) {
   }
 } 
 
+save(out, file = "./input_data/out.RData")
+
 
 ###Faire les matrices de chaleurs en se basant sur l'AUC
 

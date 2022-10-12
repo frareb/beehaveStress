@@ -28,11 +28,20 @@ simulRes <- read.table(
 
 simulRes$survival <- as.logical(simulRes$survival)
 
-simulRes$TotalWeight <- NA
-simulRes$TotalWeight <-((simulRes$TotalIHbees+simulRes$TotalForagers)*0.1 + simulRes$TotalDrones*0.2+simulRes$TotalLarvae*0.0853+simulRes$TotalDroneLarvae*0.1137333)/1000 +simulRes$HoneyEnergyStore #calcul pour obtenir le poids de la colonie
-simulRes$TotalWeight[simulRes$TotalWeight<0] = 0 #ne pas prendre les poids n??gatifs
-
-simulRes$HoneyEnergyStore[simulRes$HoneyEnergyStore<0]=0 #ne pas prendre les poids n??gatifs
+# simulRes$TotalWeight <- NA
+# calcul pour obtenir le poids de la colonie
+simulRes$TotalWeight <-
+  (
+    (simulRes$TotalIHbees + simulRes$TotalForagers)*0.1 + 
+    simulRes$TotalDrones*0.2 + 
+    simulRes$TotalLarvae*0.0853 + 
+    simulRes$TotalDroneLarvae*0.1137333
+  )/1000 + 
+    simulRes$HoneyEnergyStore 
+# ne pas prendre les poids négatifs
+simulRes$TotalWeight[simulRes$TotalWeight < 0] <- 0 
+# ne pas prendre les poids négatifs
+simulRes$HoneyEnergyStore[simulRes$HoneyEnergyStore < 0] <- 0 
 
 
 # 3. Data analysis
@@ -42,22 +51,17 @@ simulRes$HoneyEnergyStore[simulRes$HoneyEnergyStore<0]=0 #ne pas prendre les poi
 ##################################################################################
 ##################################### Matrice de chaleur #########################
 ##################################################################################
-
-
 #############################plusieurs mod??les mais simple#######################################
-
-
 ###### Initialisation de la boucle: pr??paration des objets de sortie
-
 ####### param??tres d'analyse:
 # ttime_min : jour o?? commencent les analyses
-ttime_min<-100 
-#ttime_max : jour o?? finissent les analyses
-ttime_max<-220
+ttime_min <- 100 
+# ttime_max : jour o?? finissent les analyses
+ttime_max <- 220
 # combien de temps plus tard on regarde 
 pas <- 10
-
-seuil_survival <- 0.99  #Seuil max de survie entre "ttime_n" et "ttime_n+interv" pour faire l'analyse
+# Seuil max de survie entre "ttime_n" et "ttime_n+interv" pour faire l'analyse
+seuil_survival <- 0.99  
 
 ####### param??tre calcul??
 #interv_max : le plus grand intervalle possible
@@ -70,12 +74,12 @@ interv <- seq(pas, interv_max,pas)
 
 ###### Initialisation de la boucle: pr??paration des objets de sortie
 
-#out : creation de la grille de sortie avec ttime_n et interv
+# out : creation de la grille de sortie avec ttime_n et interv
 out <- expand.grid(ttime_n=ttime_n,interv=interv)
 
 #i_max : nombre de lignes dans out = nb total d'analyses = nb de cellumes dans la matrice finale
 i_max <- nrow(out) 
-out$i<-seq(1,i_max,1)
+out$i <- 1:i_max # seq(1, i_max, 1)
 out$nb_survival <- NA
 out$nb_survival_n1 <- NA
 out$prop_survival_n1 <- NA
@@ -85,7 +89,7 @@ out$AUClarve <- NA
 out$AUClarvedrone <-NA
 out$AUChoneyenergy <- NA
 out$AUCtotmite <- NA
-out$AUCAFF<- NA
+out$AUCAFF <- NA
 out$AUCLPS <-NA
 out$AUCtotevendtoday <- NA
 out$AUCDRONE <- NA
@@ -97,10 +101,10 @@ out$modLarveDL <- NA  # mod??le selectionner par le stepwise lors de l'interacti
 out$modLarveNRJ <- NA  # mod??le selectionner par le stepwise lors de l'interaction larve * miel
 out$modNRJDL <- NA  # mod??le selectionner par le stepwise lors de l'interaction drone * miel
 out$AUCpopNRJ <-NA # population en interation avec miel
-out$AUCpopDL <-NA #population en interaction avec drone
-out$AUCLarveDL <-NA #larve et drone en interaction
-out$AUCLarveNRJ <-NA #larve et miel en interaction
-out$AUCNRJDL <-NA #larve et drone en interaction
+out$AUCpopDL <-NA # population en interaction avec drone
+out$AUCLarveDL <-NA # larve et drone en interaction
+out$AUCLarveNRJ <-NA # larve et miel en interaction
+out$AUCNRJDL <-NA # larve et drone en interaction
 
 out$pvaluepop <- NA
 out$pvaluelarve <- NA
@@ -123,8 +127,6 @@ out$signetotevendtoday <- NA
 out$signedrone <- NA
 out$signeweight <- NA
 
-
-
 ### boucle
 
 i<-1
@@ -134,19 +136,24 @@ for(i in 1:i_max) {
   time_i <- out[i,"ttime_n"]
   interv_i <- out[i,"interv"]
   
-  etat_i <- subset(simulRes,ttime==time_i&survival==1) #donn??e pr??sente en selectionnant que les colonies qui survivent
-  futur_i <- subset(simulRes,ttime==time_i+interv_i)[,c("param","survival")] # donn??e future 
-  colnames(futur_i)[2]<-"survival_n1" # changer le nom de la colonne survival dans futur_i
+  etat_i <- subset(simulRes,ttime == time_i & survival == 1) #donn??e pr??sente en selectionnant que les colonies qui survivent
+  futur_i <- subset(simulRes,ttime == time_i + interv_i)[,c("param", "survival")] # donn??e future 
+  colnames(futur_i)[2] <- "survival_n1" # changer le nom de la colonne survival dans futur_i
   
-  etat_futur<-merge(etat_i,futur_i,by="param") #importation des donn??es survie future dans un m??me tableau
-  etat_futur$TotalWeight <-((etat_futur$TotalIHbees+etat_futur$TotalForagers)*0.1 + etat_futur$TotalDrones*0.2+etat_futur$TotalLarvae*0.0853+
-                              etat_futur$TotalDroneLarvae*0.1137333/12.78)/1000 +etat_futur$HoneyEnergyStore
+  etat_futur <- merge(etat_i, futur_i, by = "param") #importation des donn??es survie future dans un m??me tableau
+  etat_futur$TotalWeight <-
+    (
+      (etat_futur$TotalIHbees + etat_futur$TotalForagers)*0.1 + 
+      etat_futur$TotalDrones*0.2 + 
+      etat_futur$TotalLarvae*0.0853 +
+      etat_futur$TotalDroneLarvae*0.1137333/12.78
+    )/1000 + etat_futur$HoneyEnergyStore
   
   out[i,"nb_survival"] <- sum(etat_futur$survival)
   out[i,"nb_survival_n1"] <- sum(etat_futur$survival_n1)
   out[i,"prop_survival_n1"] <- out[i,"nb_survival_n1"]/out[i,"nb_survival"]
   
-  if(out[i,"prop_survival_n1"]<seuil_survival){
+  if(out[i,"prop_survival_n1"] < seuil_survival){
     
     mod1 <- glm(survival_n1 ~ TotalPopSize, family = binomial, data = etat_futur)
     mod2 <- glm(survival_n1 ~ TotalLarvae,  family = binomial, data = etat_futur)
@@ -271,17 +278,17 @@ for(i in 1:i_max) {
 cols <- colorRampPalette(brewer.pal(10, "RdBu"))(256) # la base de couleur utilis??e pour la matrice de chaleur
 par(mfrow = c(1,1))
 #proportion survie
-outmatprop_survival_n1<- matrix(out$prop_survival_n1,length(interv),length(ttime_n),byrow=T)
-fields::image.plot(interv, ttime_n, outmatprop_survival_n1, col=rev(cols), main = "Proportion de survie", zlim=c(0.5, 1))
-contour(interv,ttime_n, outmatprop_survival_n1, levels = seq(0, 1, by = 0.05),add = TRUE, col = "black")
+outmatprop_survival_n1 <- matrix(out$prop_survival_n1, length(interv), length(ttime_n), byrow = TRUE)
+fields::image.plot(interv, ttime_n, outmatprop_survival_n1, col=rev(cols), main = "Proportion de survie", zlim = c(0.5, 1))
+contour(interv, ttime_n, outmatprop_survival_n1, levels = seq(0, 1, by = 0.05), add = TRUE, col = "black")
 
 
 #matrice AUC
 
 #pop
-outmatpop<- matrix(out$AUCpop,length(interv),length(ttime_n),byrow=T)
-fields::image.plot(interv, ttime_n, outmatpop, col=rev(cols), main ="AUC taille population",zlim=c(0.5, 1))
-contour(interv,ttime_n, outmatpop, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
+outmatpop <- matrix(out$AUCpop, length(interv), length(ttime_n), byrow = TRUE)
+fields::image.plot(interv, ttime_n, outmatpop, col = rev(cols), main ="AUC taille population",zlim = c(0.5, 1))
+contour(interv,ttime_n, outmatpop, levels = seq(0.5, 1, by = 0.05), add = TRUE, col = "black")
 #AUClarve
 outmatlarve<- matrix(out$AUClarve,length(interv),length(ttime_n),byrow=T)
 fields::image.plot(interv, ttime_n, outmatlarve, col=rev(cols), main ="Couvain ouvri??re",zlim=c(0.5, 1))

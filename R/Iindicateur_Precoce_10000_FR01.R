@@ -296,7 +296,7 @@ outmatlarve<- matrix(out$AUClarve,length(interv),length(ttime_n),byrow=T)
 fields::image.plot(interv, ttime_n, outmatlarve, col=rev(cols), main ="Couvain ouvri??re",zlim=c(0.5, 1))
 contour(interv,ttime_n, outmatlarve, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
 #AUC Honey Energy Store
-outmatpvaluehoneyenergy<- matrix(out$AUChoneyenergy,length(interv),length(ttime_n),byrow=T)
+outmathoneyenergy<- matrix(out$AUChoneyenergy,length(interv),length(ttime_n),byrow=T)
 fields::image.plot(interv, ttime_n, outmatpvaluehoneyenergy, col=rev(cols), main ="AUC Honey Energy Store", zlim=c(0.5, 1))
 contour(interv,ttime_n, outmatpvaluehoneyenergy, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
 #AUC larve drones
@@ -356,15 +356,15 @@ contour(interv,ttime_n, matAUCNRJDL, levels = seq(0.5, 1, by = 0.05),add = TRUE,
 
 #pop 
 cols <- colorRampPalette(brewer.pal(10, "RdBu"))(256)
-outmat<- matrix(out$AUCpop,length(interv),length(ttime_n),byrow=T)
-fields::image.plot(interv, ttime_n, outmat, col=rev(cols), main ="")
+outmatpvaluepop<- matrix(out$pvaluepop,length(interv),length(ttime_n),byrow=T)
+fields::image.plot(interv, ttime_n, outmatpvaluepop, col=rev(cols), main ="")
 contour(interv,ttime_n, outmat, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
 #AUClarve
 outmatpvaluelarve<- matrix(out$pvaluelarve,length(interv),length(ttime_n),byrow=T)
 fields::image.plot(interv, ttime_n, outmatpvaluelarve, col=rev(cols), main ="p value larve")
 contour(interv,ttime_n, outmatpvaluelarve, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
 #AUC honey
-outmathoney<- matrix(out$AUChoneyenergy,length(interv),length(ttime_n),byrow=T)
+outmathoney<- matrix(out$pvaluehoneyenergy,length(interv),length(ttime_n),byrow=T)
 fields::image.plot(interv, ttime_n, outmathoney, col=rev(cols), main ="p value honey")
 contour(interv,ttime_n, outmathoney, levels = seq(0.5, 1, by = 0.05),add = TRUE, col = "black")
 #AUC mite

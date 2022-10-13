@@ -153,6 +153,55 @@ heatmap_flight_plot
 save(heatmap_flight_plot, file = "New_graphs/Figure_flight_v1.RData")
 
 #---------------------------------------------------------------------
+# Heatmaps with signe data
+#---------------------------------------------------------------------
+
+#---------------------------------------------------------------------
+# Population size + Number of larvae
+
+out$signepop_char <- factor(NA, levels = c('positive', 'negative'))
+out$signelarve_char <- factor(NA, levels = c('positive', 'negative'))
+out$signepop_char <- ifelse(out$signepop==1, 'positive', 'negative')
+out$signelarve_char <- ifelse(out$signelarve==1, 'positive', 'negative')
+
+# Population size
+heatmap_pop_plot_v2 <- out[!is.na(out$AUCpop),] %>% 
+  ggplot(aes(x = ttime_n, y = interv, fill = AUCpop))+
+  ggtitle('Population size')+
+  geom_tile()+
+  geom_label(data = . %>% filter(pvaluepop<.05, pvaluepop>.01), aes(label = round(AUCpop, 2) %>% str_replace("0",""), colour=signepop_char), label.size = 0, size=3, fill = "transparent")+
+  geom_label(data = . %>% filter(pvaluepop<.01), aes(label = round(AUCpop, 2) %>% str_replace("0",""), colour=signepop_char), label.size = 0, size=3, fill = "transparent", fontface='bold')+
+  scale_colour_manual(values=c('positive'='deeppink', 'negative'='blue'), name='Effect\nsign' ) +
+  coord_cartesian(expand = F)+
+  scale_fill_distiller(type ="div", palette = 4, limits = c(limcol, 1), oob = scales::squish, name = 'AUC')+
+  scale_x_continuous(breaks = c(120, 151, 181, 212), labels = c('Ap', "My", "Jn", "Jl"), name = "Day of observation", sec.axis = dup_axis(name = NULL))+
+  scale_y_continuous(breaks = seq(50, 250, length.out=5), name = 'Prediction (Day)', sec.axis = dup_axis(name = NULL))+
+  theme(panel.spacing.x = unit(0,"lines"), strip.placement = "outside", 
+        panel.grid = element_line(linetype = 3, color = "lightgrey"),
+        legend.position = 'top', legend.justification = c(1,1))
+heatmap_pop_plot_v2
+save(heatmap_pop_plot_v2, file = "New_graphs/Figure_pop_v2.RData")
+
+# Number of larvae
+heatmap_larve_plot_v2 <- out[!is.na(out$AUClarve),] %>% 
+  ggplot(aes(x = ttime_n, y = interv, fill = AUClarve))+
+  ggtitle('Number of larvae')+
+  geom_tile()+
+  geom_label(data = . %>% filter(pvaluelarve<.05, pvaluelarve>.01), aes(label = round(AUClarve, 2) %>% str_replace("0",""), colour=signelarve_char), label.size = 0, size=3, fill = "transparent")+
+  geom_label(data = . %>% filter(pvaluelarve<.01), aes(label = round(AUClarve, 2) %>% str_replace("0",""), colour=signelarve_char), label.size = 0, size=3, fill = "transparent", fontface='bold')+
+  scale_colour_manual(values=c('positive'='deeppink', 'negative'='blue'), name='Effect\nsign' ) +
+  coord_cartesian(expand = F)+
+  scale_fill_distiller(breaks = c(0.5, 0.75, 1.0), type ="div", palette = 4, limits = c(limcol, 1), oob = scales::squish, name = 'AUC')+
+  scale_x_continuous(breaks = c(120, 151, 181, 212), labels = c('Ap', "My", "Jn", "Jl"), name = "Day of observation", sec.axis = dup_axis(name = NULL))+
+  scale_y_continuous(breaks = seq(50, 250, length.out=5), name = 'Prediction (Day)', sec.axis = dup_axis(name = NULL))+
+  theme(panel.spacing.x = unit(0,"lines"), strip.placement = "outside", 
+        panel.grid = element_line(linetype = 3, color = "lightgrey"),
+        legend.position = 'top', legend.justification = c(1,1))
+heatmap_larve_plot_v2
+save(heatmap_larve_plot_v2, file = "New_graphs/Figure_larve_v2.RData")
+
+
+#---------------------------------------------------------------------
 # PDF Exportation
 #---------------------------------------------------------------------
 

@@ -1,5 +1,5 @@
 rm(list=ls())
-dev.off()
+# dev.off()
 
 library(dplyr)
 library(stringr)
@@ -209,8 +209,15 @@ load("./New_graphs/Figure_pop_v1.RData")
 load("./New_graphs/Figure_larve_v1.RData")
 load("./New_graphs/Figure_pop_larve_v1.RData")
 
-pdf(file = "./New_graphs/heatmap.pdf", width = 12)
+pdf(file = "./New_graphs/heatmap.pdf", width = 6)
   heatmap_pop_plot
+  heatmap_pop_plot_v2
   heatmap_larve_plot
-  heatmap_pop_larve_plot
+  heatmap_larve_plot_v2
+  # heatmap_pop_larve_plot
+  heatmap_weight_plot
+  heatmap_honey_plot
+  heatmap_AFF_plot
+  heatmap_LSP_plot
+  heatmap_flight_plot
 dev.off()
